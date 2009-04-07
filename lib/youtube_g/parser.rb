@@ -58,6 +58,17 @@ class YouTubeG
         description = media_group.elements["media:description"].text
         duration = media_group.elements["yt:duration"].attributes["seconds"].to_i
 
+        # parse the category list to find developer tags
+        developer_tags = []
+        media_group.elements.each("media:category") do |category|
+          # determine if it's a developertag, or just a category
+          scheme = category.attributes["scheme"]
+          if (scheme =~ /\/developertags\.cat$/)
+            # it's a developer tag
+            developer_tags << category.text
+          end
+        end
+
         media_content = []
         media_group.elements.each("media:content") do |mce|
           media_content << parse_media_content(mce)
@@ -107,6 +118,7 @@ class YouTubeG
           :author => author,
           :description => description,
           :duration => duration,
+          :developer_tags => developer_tags,
           :media_content => media_content,
           :player_url => player_url,
           :thumbnails => thumbnails,

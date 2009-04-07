@@ -94,6 +94,9 @@ class YouTubeG
       # YouTubeG::Model::Author:: Information about the YouTube user who owns a piece of video content.
       attr_reader :author
       
+      # *Array*:: An array of words associated with the developer whose application uploaded or modified the video.
+      attr_reader :developer_tags
+      
       # *Array*:: An array of YouTubeG::Model::Content objects describing the individual media content data available for this video.  Most, but not all, videos offer this.
       attr_reader :media_content
       
