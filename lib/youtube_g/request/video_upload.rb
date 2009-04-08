@@ -43,7 +43,8 @@ class YouTubeG
                   :title => '',
                   :description => '',
                   :category => '',
-                  :keywords => [] }.merge(opts)
+                  :keywords => [],
+                  :developer_tags => [] }.merge(opts)
         
         @opts[:filename] ||= generate_uniq_filename_from(data)
         
@@ -148,7 +149,7 @@ class YouTubeG
       def raise_on_faulty_response(response)
         if response.code.to_i == 403
           raise AuthenticationError, response.body[/<TITLE>(.+)<\/TITLE>/, 1]
-        elsif response.code.to_i != 200
+        elsif ![200,201].include?(response.code.to_i) #Browser-based uploading gives 200 on success, Direct uploading gives 201 on success
           raise UploadError, parse_upload_error_from(response.body)
         end 
       end
@@ -185,17 +186,22 @@ class YouTubeG
       
       # TODO: isn't there a cleaner way to output top-notch XML without requiring stuff all over the place?
       def video_xml
-        b = Builder::XML.new
-        b.instruct!
-        b.entry(:xmlns => "http://www.w3.org/2005/Atom", 'xmlns:media' => "http://search.yahoo.com/mrss/", 'xmlns:yt' => "http://gdata.youtube.com/schemas/2007") do | m |
-          m.tag!("media:group") do | mg |
-            mg.tag!("media:title", :type => "plain") { @opts[:title] }
-            mg.tag!("media:description", :type => "plain") { @opts[:description] }
-            mg.tag!("media:keywords") { @opts[:keywords].join(",") }
-            mg.tag!('media:category', :scheme => "http://gdata.youtube.com/schemas/2007/categories.cat") { @opts[:category] }
-            mg.tag!('yt:private') if @opts[:private]
+        xml = Builder::XmlMarkup.new(:indent => 2)
+        xml.instruct! :xml, :version => '1.0', :encoding => nil
+        xml.entry :xmlns => 'http://www.w3.org/2005/Atom',
+          'xmlns:media' => 'http://search.yahoo.com/mrss/',
+          'xmlns:yt' => 'http://gdata.youtube.com/schemas/2007' do
+          xml.media :group do
+            xml.media :title,       @opts[:title],        :type => 'plain'
+            xml.media :description, @opts[:description],  :type => 'plain'
+            xml.media :category,    @opts[:category],     :scheme => 'http://gdata.youtube.com/schemas/2007/categories.cat'
+            @opts[:developer_tags].each do |developer_tag|
+              xml.media :category,  developer_tag,        :scheme => 'http://gdata.youtube.com/schemas/2007/developertags.cat'
+            end
+            xml.tag! 'media:keywords', @opts[:keywords].join(",")
           end
-        end.to_s
+        end
+        xml.target!
       end
       
       def generate_upload_io(video_xml, data)
