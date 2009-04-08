@@ -1,12 +1,14 @@
 class YouTubeG
   module Parser #:nodoc:
     class FeedParser #:nodoc:
-      def initialize(url)
+      def initialize(url, options={})
         @url = url
+        @headers = options
       end
       
       def parse
-        parse_content open(@url).read
+        # nil headers are not an option
+        @headers.is_a?(Hash) ? parse_content(open(@url, @headers).read) : parse_content(open(@url).read)
       end      
     end
 
