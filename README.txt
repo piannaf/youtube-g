@@ -44,6 +44,8 @@ Basic queries:
   client.videos_by(:categories => [:news, :sports], :tags => ['soccer', 'football'])
   client.videos_by(:user => 'liz')
   client.videos_by(:favorites, :user => 'liz')
+  client.videos_by(:developer_tags => [:app, :user], :headers => {"X-GData-Key" => "key=<developer_key>"})
+  * developer_tags must be associated with a valid developer_key
 	
 Standard feeds:
 	
@@ -53,7 +55,9 @@ Standard feeds:
 	
 Advanced queries (with boolean operators OR (either), AND (include), NOT (exclude)):
 	
-  client.videos_by(:categories => { :either => [:news, :sports], :exclude => [:comedy] }, :tags => { :include => ['football'], :exclude => ['soccer'] })
+  client.videos_by(:categories => { :either => [:news, :sports], :exclude => [:comedy] }, 
+                   :tags => { :include => ['football'], :exclude => ['soccer'] }, 
+                   :developer_tags => { :either => [:app1, :app2], :include => [:user1, :user2] } )
 
 == LOGGING
 

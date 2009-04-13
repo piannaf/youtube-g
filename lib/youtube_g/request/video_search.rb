@@ -14,6 +14,7 @@ class YouTubeG
       attr_reader :video_format                    # format (1=mobile devices)
       attr_reader :racy                            # racy ([exclude], include)
       attr_reader :author
+      attr_reader :developer_tags                  # /-/{http://gdata.youtube.com/schemas/2007/developertags.cat}tag1
       
       def initialize(params={})
         # Initialize our various member data to avoid warnings and so we'll
@@ -27,9 +28,10 @@ class YouTubeG
         # Return a single video (base_url + /T7YazwP8GtY)
         return @url << "/" << params[:video_id] if params[:video_id]
         
-        @url << "/-/" if (params[:categories] || params[:tags])
+        @url << "/-/" if (params[:categories] || params[:tags] || (params[:developer_tags])
         @url << categories_to_params(params.delete(:categories)) if params[:categories]
         @url << tags_to_params(params.delete(:tags)) if params[:tags]
+        @url << developer_tags_to_params(params.delete(:developer_tags)) if params[:developer_tags]
 
         set_instance_variables(params)
         
@@ -71,6 +73,22 @@ class YouTubeG
           s
         else
           categories.map { |c| c.to_s.capitalize }.join("/") << '/'
+        end
+      end
+      
+      # GData requires developer tags to be specified with their schema.
+      # Developer tags defined like: developer_tags => { :include => [:app], :exclude => [:user], :either => [..] }
+      # or like: developer_tags => [:app, :user]
+      def developer_tags_to_params(dev_tags)
+        prefix = "{http://gdata.youtube.com/schemas/2007/developertags.cat}"
+        if dev_tags.respond_to?(:keys) and dev_tags.respond_to?(:[])
+          s = ""
+          s << dev_tags[:either].map { |dt| YouTubeG.esc(prefix + dt.to_s) }.join("%7C") << '/' if dev_tags[:either]
+          s << dev_tags[:include].map { |dt| YouTubeG.esc(prefix + dt.to_s) }.join("/") << '/' if dev_tags[:include]            
+          s << ("-" << dev_tags[:exclude].map { |dt| YouTubeG.esc(prefix + dt.to_s) }.join("/-")) << '/' if dev_tags[:exclude]
+          s
+        else
+          dev_tags.map { |dt| YouTubeG.esc(prefix + dt.to_s) }.join("/") << '/'
         end
       end
 
